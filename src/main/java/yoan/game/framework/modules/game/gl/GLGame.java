@@ -3,6 +3,7 @@ package yoan.game.framework.modules.game.gl;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import yoan.game.framework.R;
 import yoan.game.framework.modules.audio.AndroidAudio;
 import yoan.game.framework.modules.audio.Audio;
 import yoan.game.framework.modules.fileio.AndroidFileIO;
@@ -12,9 +13,14 @@ import yoan.game.framework.modules.graphics.Graphics;
 import yoan.game.framework.modules.graphics.gl.GLGraphics;
 import yoan.game.framework.modules.input.AndroidInput;
 import yoan.game.framework.modules.input.Input;
+import yoan.game.framework.modules.network.AndroidBlueTooth;
+import yoan.game.framework.modules.network.BlueTooth;
+import yoan.game.framework.modules.network.DeviceListActivity;
 import yoan.game.framework.modules.screen.Screen;
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
+import android.content.Intent;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLSurfaceView.Renderer;
 import android.os.Bundle;
@@ -22,9 +28,10 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 /**
- * 
+ * Classe de base des jeux android utilisant openGL ES
  * @author yoan
  */
 public abstract class GLGame extends Activity implements Game, Renderer {
@@ -42,10 +49,18 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 		Idle
 	}
 
+	// Identifiant des intent de requête
+    /** Requête de demande de device avec lequel se connecter */
+    public static final int REQUEST_CONNECT_DEVICE = 1;
+    /** Requête de demande d'activation du Bluetooth */
+    public static final int REQUEST_ENABLE_BT = 3;
+    
 	/** Gestion Android du thread de rendu OpenGL ES*/
 	GLSurfaceView glView;
 	/** Gestion des graphismes via OpenGL ES */
 	GLGraphics glGraphics;
+	/** Gestion Android du BlueTooth */
+	BlueTooth blueTooth;
 	/** Gestion des sons */
 	Audio audio;
 	/** Gestion des entrées */
@@ -62,6 +77,7 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 	Object stateChanged= new Object();
 	/** Temps au démarrage du jeu */
 	long startTime= System.nanoTime();
+	
 	
 	/**
 	 * Création de l'activité du jeu
@@ -195,6 +211,83 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 		super.onPause();
 	}
 	
+	/**
+	 * Gestion spécifique de la destruction de l'activité du jeu
+	 */
+	@Override
+    public void onDestroy() {
+        super.onDestroy();
+        // Stop du Bluetooth s'il est utilisé
+        if (blueTooth != null) blueTooth.stop();
+    }
+	
+	/**
+	 * Gestion des retours des appels à d'autres activités
+	 * @param requestCode : identifiant de la requête
+	 * @param resultCode : code retour de la réponse
+	 * @param data : données de la réponse
+	 */
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		//gestion des retours pour le Bluetooth s'il est activé
+		if (blueTooth != null) {
+			manageBTonActivityResult(requestCode, resultCode, data);
+		}
+    }
+	
+	/**
+	 * Gestion des retours des appels à d'autres activités spécifiques à la gestion du Bluetooth
+	 * @param requestCode : identifiant de la requête
+	 * @param resultCode : code retour de la réponse
+	 * @param data : données de la réponse
+	 */
+	private void manageBTonActivityResult(int requestCode, int resultCode, Intent data){
+		switch (requestCode) {
+			//retour de demande de device avec lequel se connecter
+	        case REQUEST_CONNECT_DEVICE:
+	            // Récup
+	            if (resultCode == Activity.RESULT_OK) {
+	            	// récupération de l'adresse MAC
+	                String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+	            	blueTooth.connectDevice(address);
+	            }
+	            break;
+	        //retour de demande d'activation du Bluetooth
+	        case REQUEST_ENABLE_BT:
+	            if (resultCode == Activity.RESULT_OK) {
+	                // configuration du Bluetooth
+	            	blueTooth.setupBlueTooth();
+	            } else {
+	                // Echec de l'activation
+	                Toast.makeText(this, R.string.bt_not_enabled_leaving, Toast.LENGTH_SHORT).show();
+	                finish();
+	            }
+	        }
+	}
+
+	/**
+	 * Activation de l'utilisation du Bluetooth
+	 */
+	public void activateBlueTooth() {
+		if (blueTooth == null) {
+			blueTooth = new AndroidBlueTooth(this, BluetoothAdapter.getDefaultAdapter());
+			 // configuration du Bluetooth
+        	blueTooth.setupBlueTooth();
+			//résultat de la recherche renvoyer dans un intent reçu par le onActivityResult
+			blueTooth.searchDevice();
+		}
+	}
+	
+	/**
+	 * Désactivation de l'utilisation du Bluetooth
+	 */
+	public void desactivateBlueTooth() {
+		if (blueTooth != null) {
+			blueTooth.stop();
+			blueTooth = null;
+		}
+	}
+
 	/** 
 	 * Accès au gestionnaire des graphismes openGL ES
 	 * @return Graphics 
@@ -233,6 +326,14 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 	 */
 	public Audio getAudio(){
 		return audio;
+	}
+	
+	/** 
+	 * Accès au gestionnaire du BlueTooth
+	 * @return BlueTooth 
+	 */
+	public BlueTooth getBlueTooth(){
+		return blueTooth;
 	}
 	
 	/**

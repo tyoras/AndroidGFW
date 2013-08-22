@@ -9,6 +9,7 @@ import yoan.game.framework.modules.graphics.AndroidGraphics;
 import yoan.game.framework.modules.graphics.Graphics;
 import yoan.game.framework.modules.input.AndroidInput;
 import yoan.game.framework.modules.input.Input;
+import yoan.game.framework.modules.network.BlueTooth;
 import yoan.game.framework.modules.screen.Screen;
 import android.app.Activity;
 import android.content.Context;
@@ -129,6 +130,14 @@ public abstract class AndroidGame extends Activity implements Game {
 	 */
 	public Audio getAudio(){
 		return audio;
+	}
+	
+	/** 
+	 * Accès au gestionnaire du BlueTooth
+	 * @return BlueTooth 
+	 */
+	public BlueTooth getBlueTooth(){
+		return null;
 	}
 	
 	/**

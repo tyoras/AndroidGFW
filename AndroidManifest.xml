@@ -11,7 +11,11 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:theme="@style/AppTheme" >
-        <activity android:name="AndroidGame" />
+        <activity android:name="yoan.game.framework.modules.game.AndroidGame" />
+        <activity android:name="yoan.game.framework.modules.network.DeviceListActivity"
+                  android:label="@string/select_device"
+                  android:theme="@android:style/Theme.Dialog"
+                  android:configChanges="orientation|keyboardHidden" />
     </application>
 
 </manifest>
