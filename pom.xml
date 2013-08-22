@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>GFW</groupId>
 	<artifactId>Android</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<name>AndroidGFW</name>
 	<description>Implémentation Android du Meta Game FrameWork</description>
 
@@ -27,7 +27,7 @@
 		<dependency>
 			<groupId>GFW</groupId>
 			<artifactId>Meta</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.0.2-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 
