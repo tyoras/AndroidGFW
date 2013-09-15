@@ -36,34 +36,32 @@ public class AndroidBlueTooth implements BlueTooth {
     public static final String TOAST = "toast";
 
     /** Weak reference vers l'activité du jeu */
-    private final WeakReference<GLGame> gameActivity;
-    /** Handler vers le thread de l'UI */
-    private final Handler uiHandler;
-
-    // String buffer for outgoing messages
-    private StringBuffer outStringBuffer;
+    private final WeakReference<GLGame> gameActivityRef;
+    /** Handler vers le thread de rendu openGL */
+    private final Handler glThreadHandler;
+    
+    /** Dernier message reçu */
+    private static String lastMsg;
+    
     /** Gestionnaire android de Blue Tooth */
     private BluetoothAdapter bluetoothAdapter = null;
     /** Gestionnaire d'accès aux thread du BlueTooth */
     private BlueToothService blueToothService;
     
     /**
-     * Handler permettant de récupérer les retour du Blue Tooth manager
+     * Handler permettant de récupérer les retour du BlueTooth manager
      * @author yoan
      */
-    private static class UIHandler extends Handler {
+    private static class GLThreadHandler extends Handler {
     	 /** Weak reference vers l'activité du jeu sur lequel repose le handler */
     	private final WeakReference<GLGame> RefToGameActivity;
     	 
     	/** Constructeur pour récupérer la référence */
-        public UIHandler(GLGame gameActivity) {
+        public GLThreadHandler(GLGame gameActivity) {
         	super(gameActivity.getMainLooper());
         	this.RefToGameActivity = new WeakReference<GLGame>(gameActivity);
         }
         
-        
-        
-        //TODO Trouver comment utiliser ce handler!!
         @Override
         public void handleMessage(Message msg) {
         	Activity gameActivity = RefToGameActivity.get();
@@ -81,18 +79,18 @@ public class AndroidBlueTooth implements BlueTooth {
                     }
                     break;
                 case MESSAGE_WRITE:
-                    byte[] writeBuf = (byte[]) msg.obj;
-                    // construct a string from the buffer
-                    String writeMessage = new String(writeBuf);
+//                    byte[] writeBuf = (byte[]) msg.obj;
+//                    // construct a string from the buffer
+//                    String writeMessage = new String(writeBuf);
                     break;
                 case MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
-                    // construct a string from the valid bytes in the buffer
-                    String readMessage = new String(readBuf, 0, msg.arg1);
+                    // récupération du dernier message
+                    lastMsg = new String(readBuf, 0, msg.arg1);
                     break;
                 case MESSAGE_DEVICE_NAME:
                     // Affichage du nom du device connecté
-                    Toast.makeText(gameActivity.getApplicationContext(), "Connected to " + msg.getData().getString(DEVICE_NAME), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(gameActivity.getApplicationContext(), "Connecté à " + msg.getData().getString(DEVICE_NAME), Toast.LENGTH_SHORT).show();
                     break;
                 case MESSAGE_TOAST:
                     Toast.makeText(gameActivity.getApplicationContext(), msg.getData().getString(TOAST), Toast.LENGTH_SHORT).show();
@@ -103,8 +101,9 @@ public class AndroidBlueTooth implements BlueTooth {
     }
     
     public AndroidBlueTooth(GLGame gameActivity, BluetoothAdapter bluetoothAdapter) {
-    	this.gameActivity = new WeakReference<GLGame>(gameActivity);;
-    	uiHandler = new UIHandler(gameActivity);
+    	this.gameActivityRef = new WeakReference<GLGame>(gameActivity);
+    	//mise en place du handler sur le thread appelant
+    	glThreadHandler = new GLThreadHandler(gameActivity);
     	this.bluetoothAdapter = bluetoothAdapter;
     }
     
@@ -113,79 +112,47 @@ public class AndroidBlueTooth implements BlueTooth {
      */
     @Override
     public void setupBlueTooth() {
-    	if (this.gameActivity != null) {
-    		GLGame glGame = gameActivity.get();
+    	if (this.gameActivityRef != null) {
+    		GLGame glGame = gameActivityRef.get();
             
-            // If the adapter is null, then Bluetooth is not supported
+            //vérification du support du bluetooth
             if (bluetoothAdapter == null) {
-                Toast.makeText(glGame, "Bluetooth is not available", Toast.LENGTH_LONG).show();
-                gameActivity.get().finish();
+                Toast.makeText(glGame, "Bluetooth non disponible", Toast.LENGTH_LONG).show();
+                gameActivityRef.get().finish();
                 return;
             }
             
-            // If BT is not on, request that it be enabled.
-            // setupChat() will then be called during onActivityResult
+            //demande d'activation si nécessaire
             if (!bluetoothAdapter.isEnabled()) {
                 Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 glGame.startActivityForResult(enableIntent, GLGame.REQUEST_ENABLE_BT);
                 return;
-            // Otherwise, setup the chat session
             } else {
-            	 // Initialize the BluetoothChatService to perform bluetooth connections
-        		blueToothService = new BlueToothService(uiHandler);
-            	// Performing this check in onResume() covers the case in which BT was
-                // not enabled during onStart(), so we were paused to enable it...
-                // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
-                if (blueToothService != null) {
-                    // Only if the state is STATE_NONE, do we know that we haven't started already
-                    if (blueToothService.getState() == BlueToothService.STATE_NONE) {
-                      // Start the Bluetooth chat services
-                    	blueToothService.start();
-                    }
+        		blueToothService = new BlueToothService(glThreadHandler);
+        		// si le service n'est pas déjà démarré
+        		if (blueToothService != null && blueToothService.getState() == BlueToothService.STATE_NONE) {
+                  	// on le démarre
+                	blueToothService.start();
                 }
-        
-                // Initialize the buffer for outgoing messages
-                outStringBuffer = new StringBuffer("");
             }
-            
     	}
     }
 	
+    /**
+     * Stop l'utilisation du bluetooth
+     */
     @Override
     public void stop() {
-        // Stop the Bluetooth
         if (blueToothService != null) blueToothService.stop();
     }
 
-    /**
-     * Sends a message.
-     * @param message  A string of text to send.
-     */
-    private void sendMessage(String message) {
-        // Check that we're actually connected before trying anything
-        if (blueToothService.getState() != BlueToothService.STATE_CONNECTED) {
-            Toast.makeText(gameActivity.get(), R.string.not_connected, Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Check that there's actually something to send
-        if (message.length() > 0) {
-            // Get the message bytes and tell the BluetoothChatService to write
-            byte[] send = message.getBytes();
-            blueToothService.write(send);
-
-            // Reset out string buffer to zero and clear the edit text field
-            outStringBuffer.setLength(0);
-        }
-    }
-	
     /**
      * Lance la recherche et le choix de l'appareil
      */
     @Override
     public void searchDevice() {
-    	Intent serverIntent = new Intent(gameActivity.get(), DeviceListActivity.class);
-    	gameActivity.get().startActivityForResult(serverIntent, GLGame.REQUEST_CONNECT_DEVICE);
+    	Intent serverIntent = new Intent(gameActivityRef.get(), DeviceListActivity.class);
+    	gameActivityRef.get().startActivityForResult(serverIntent, GLGame.REQUEST_CONNECT_DEVICE);
     }
     
     /**
@@ -214,5 +181,31 @@ public class AndroidBlueTooth implements BlueTooth {
 	@Override
 	public String getConnectedDeviceName(){
 		return blueToothService != null ? blueToothService.connectedDeviceName : null;
+	}
+	
+	/**
+	 * Récupération du dernier message reçu
+	 */
+	@Override
+	public String getLastMsg() {
+		return lastMsg;
+	}
+	
+	/**
+	 * Ecrit un message vers l'appareil connecté
+	 */
+	@Override
+	public void write(String msg) {
+		// on vérfie qu'on est bien connecté
+        if (blueToothService.getState() != BlueToothService.STATE_CONNECTED) {
+            Toast.makeText(gameActivityRef.get(), R.string.not_connected, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // s'il y a un message
+        if (msg.length() > 0) {
+            byte[] msgBytes = msg.getBytes();
+            blueToothService.write(msgBytes);
+        }
 	}
 }
