@@ -7,6 +7,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 import yoan.game.framework.modules.fileio.FileIO;
 import yoan.game.framework.modules.game.gl.GLGame;
+import yoan.game.framework.util.math.shape.RectangleShape;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.opengl.GLUtils;
@@ -15,7 +16,7 @@ import android.opengl.GLUtils;
  * Gestion Android des textures pour OpenGL ES 1.0
  * @author yoan
  */
-public class Texture {
+public class Texture implements RectangleShape {
 	/** Accès Android à OpenGL ES 1.0 */
 	GLGraphics glGraphics;
 	/** Gestionnaire de fichier */
@@ -66,7 +67,7 @@ public class Texture {
 			height= bitmap.getHeight();
 			//binding sur l'ID généré
 			gl.glBindTexture(GL10.GL_TEXTURE_2D, textureId);
-			//puis unpload de la bitmap vers le GPU
+			//puis upload de la bitmap vers le GPU
 			GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0);
 			//mise en place des filtres de min et mag
 			setFilters(GL10.GL_NEAREST, GL10.GL_NEAREST);
@@ -123,5 +124,15 @@ public class Texture {
 		//et on l'efface du GPU
 		int[] textureIds= {textureId};
 		gl.glDeleteTextures(1, textureIds, 0);
+	}
+
+	@Override
+	public float getWidth(){
+		return width;
+	}
+
+	@Override
+	public float getHeight(){
+		return height;
 	}
 }

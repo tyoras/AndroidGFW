@@ -119,6 +119,7 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 	 * @param gl : l'instance courante de GL10
 	 * @param config : la config actuelle d'OpenGL ES
 	 */
+	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config){
 		//on garde l'instance de GL10
 		glGraphics.setGL(gl);
@@ -140,6 +141,7 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 	 * @param width : nouvelle largeur de la vue
 	 * @param height : nouvelle hauteur de la vue
 	 */
+	@Override
 	public void onSurfaceChanged(GL10 gl, int width, int height) { /* inutilisé */ }
 	
 	/**
@@ -147,6 +149,7 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 	 * Gère en fonction de l'état du jeu
 	 * @param gl : l'instance courante de GL10
 	 */
+	@Override
 	public void onDrawFrame(GL10 gl){
 		GLGameState state= null;
 		// l'état peut aussi être accéder par l'UI thread dans onPause, donc synchro
@@ -300,6 +303,7 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 	 * Accès au gestionnaire des entrées
 	 * @return Input 
 	 */
+	@Override
 	public Input getInput(){
 		return input;
 	}
@@ -308,6 +312,7 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 	 * Accès au gestionnaire des fichiers
 	 * @return FileIO 
 	 */
+	@Override
 	public FileIO getFileIO(){
 		return fileIO;
 	}
@@ -316,6 +321,7 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 	 * Accès au gestionnaire des graphismes
 	 * @return Graphics 
 	 */
+	@Override
 	public Graphics getGraphics(){
 		throw new IllegalStateException("We are using OpenGL!");
 	}
@@ -324,6 +330,7 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 	 * Accès au gestionnaire des sons
 	 * @return Audio 
 	 */
+	@Override
 	public Audio getAudio(){
 		return audio;
 	}
@@ -332,6 +339,7 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 	 * Accès au gestionnaire du BlueTooth
 	 * @return BlueTooth 
 	 */
+	@Override
 	public BlueTooth getBlueTooth(){
 		return blueTooth;
 	}
@@ -339,6 +347,7 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 	/**
 	 * Remplace l'écran courant du jeu par un nouvel écran
 	 */
+	@Override
 	public void setScreen(Screen screen){
 		if(screen == null) throw new IllegalArgumentException("Screen must not be null");
 		//arrêt de l'écran courant
@@ -353,6 +362,7 @@ public abstract class GLGame extends Activity implements Game, Renderer {
 	/**
 	 * Accès à l'écran courant du jeu
 	 */
+	@Override
 	public Screen getCurrentScreen() {
 		return screen;
 	}
