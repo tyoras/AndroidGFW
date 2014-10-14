@@ -1,7 +1,8 @@
 package yoan.game.framework.modules.graphics.gl;
 
+import static yoan.game.framework.util.Preconditions.checkArgument;
+import static yoan.game.framework.util.Preconditions.checkNotNull;
 import yoan.game.framework.util.math.region.RectangleRegion;
-import static yoan.game.framework.util.Preconditions.*;
 
 /**
  * Gestion Android des animations de sprite
@@ -12,10 +13,14 @@ public class Animation {
 	public static final int ANIMATION_LOOPING= 0;
 	/** Mode d'animation finie à la dernière frame */
 	public static final int ANIMATION_NONLOOPING= 1;
+	/** Largeur des sprites du personnage en pixel */
+	public final int SPRITE_BASIC_WIDTH;
+	/** Hauteur des sprites du personnage en pixel */
+	public final int SPRITE_BASIC_HEIGHT;
 	/** Régions de chacune des frames dans la texture */
 	final TextureRegion[] keyFrames;
 	/** régions corrspondant aux limites physique de chaque frame */
-	RectangleRegion[] physicalBounds;
+	RectangleRegion[] physicalBounds;	
 	/** Durée d'une frame d'animation */
 	final float frameDuration;
 
@@ -24,10 +29,14 @@ public class Animation {
 	 * @param frameDuration : durée d'une frame
 	 * @param keyFrames : textures de chacune des frames dans l'ordre d'affichage
 	 */
-	public Animation(float frameDuration, TextureRegion... keyFrames){
+	public Animation(int basicSpriteWidth, int basicSpriteHeight, float frameDuration, TextureRegion... keyFrames){
+		checkArgument(basicSpriteWidth > 0.0f);
+		checkArgument(basicSpriteHeight > 0.0f);
 		this.frameDuration= frameDuration;
 		this.keyFrames= keyFrames;
 		this.physicalBounds = null;
+		this.SPRITE_BASIC_HEIGHT = basicSpriteHeight;
+		this.SPRITE_BASIC_WIDTH = basicSpriteWidth;
 	}
 	
 	/**
